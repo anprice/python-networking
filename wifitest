@@ -1,0 +1,77 @@
+import platform
+import socket
+import subprocess
+import psutil
+
+#Do all of the connectivity tests for ping, internal/external DNS,
+def Connectivity_test(specs, host, internal_host, external_host):
+    print(f"Running the ping test to {host}.")
+    if specs[0]=='Windows':
+        command = ["ping", "-n", "5", host]
+    else:
+        command = ["ping", "-c", "5", host]
+    try:
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True,  )
+        print(result.stdout)
+    except subprocess.CalledProcessError as err:
+        print(err.stdout)
+        print()
+
+    #Internal DNS check
+    command = ["nslookup", internal_host]
+    print("Running the internal DNS test...")
+    try:
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True,  )
+        print(result.stdout)
+    except subprocess.CalledProcessError as err:
+        print(f"Could not resolve {internal_host}.")
+        print(err.stderr)
+        print()
+
+    #External DNS check
+    command = ["nslookup", external_host]
+    print("Running the external DNS test....")
+    try:
+        result = subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True,  )
+        print(result.stdout)
+    except subprocess.CalledProcessError as err:
+        print(f"Could not resolve {external_host}.")
+        print(err.stderr)
+        print()
+
+#Display the details of the computer that the script is running on
+def Display_info(specs):
+
+    print(f"Operating System:\t {specs[0]}")
+    print(f"OS version:\t\t {specs[1]}")
+    print(f"Computer Name:\t\t {specs[2]}")
+    keyCheck = False
+    
+    for key, val in specs[3].items():
+        if "en0" in key:  # Filter WLAN interfaces
+            for address in val:
+                if address.family == socket.AF_INET:  # IPv4
+                    print(f"WLAN Interface")
+                    print(f"  Interface:\t {key}")
+                    print(f"  IP Address:\t {address.address}")
+                if address.family == socket.AF_LINK:
+                    print(f"  MAC Address:\t {address.address}")
+                    print()
+                    keyCheck = True
+
+    if keyCheck == False:
+        print("No Interface Found")
+
+#Get the OS name, version, computer name, and interface information 
+def get_comp_info():
+    os_name = platform.system()
+    os_version = platform.version()
+    comp_name = platform.node()
+    interface = psutil.net_if_addrs()
+    #print(interface)
+    return os_name, os_version, comp_name, interface
+
+if __name__ == "__main__":
+    specs = get_comp_info()
+    Display_info(specs)
+    Connectivity_test(specs, "9.1.2.3", "w3.ibm.com", "ibm.com")

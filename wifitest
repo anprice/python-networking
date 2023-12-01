@@ -1,6 +1,7 @@
 import platform
 import socket
 import subprocess
+from xml.dom.expatbuilder import ParseEscape
 import psutil
 
 #Do all of the connectivity tests for ping, internal/external DNS,
@@ -41,26 +42,45 @@ def Connectivity_test(specs, host, internal_host, external_host):
 
 #Display the details of the computer that the script is running on
 def Display_info(specs):
-
-    print(f"Operating System:\t {specs[0]}")
-    print(f"OS version:\t\t {specs[1]}")
-    print(f"Computer Name:\t\t {specs[2]}")
+    
+    print("----- Computer Information -----")
+    print(f"  Operating System:\t {specs[0]}")
+    print(f"  OS version:\t\t {specs[1]}")
+    print(f"  Computer Name:\t {specs[2]}")
     keyCheck = False
     
-    for key, val in specs[3].items():
-        if "en0" in key:  # Filter WLAN interfaces
-            for address in val:
-                if address.family == socket.AF_INET:  # IPv4
-                    print(f"WLAN Interface")
-                    print(f"  Interface:\t {key}")
-                    print(f"  IP Address:\t {address.address}")
-                if address.family == socket.AF_LINK:
-                    print(f"  MAC Address:\t {address.address}")
-                    print()
-                    keyCheck = True
+#Execute below statement if the OS is Darwin(Mac)
+    if specs[0] == 'Darwin':
+        for key, val in specs[3].items():
+            if "en0" in key:  # Filter WLAN interfaces
+                for address in val:
+                    if address.family == socket.AF_INET:  # IPv4
+                        print(f"----- WLAN Interface -----")
+                        print(f"  Interface:\t {key}")
+                        print(f"  IP Address:\t {address.address}")
+                    if address.family == socket.AF_LINK:
+                        print(f"  MAC Address:\t {address.address}")
+                        print()
+                        keyCheck = True
+                    if keyCheck == False:
+                        print("No Interface Found")
+                        
+ #Execute below statement if the OS is windows                  
+    elif specs[0] == 'Windows':
+        for key, val in specs[3].items():
+            if "Ethernet" in key:  # Filter WLAN interfaces
+                for address in val:
+                    if address.family == socket.AF_INET:  # IPv4
+                        print(f"----- WLAN Interface -----")
+                        print(f"  Interface:\t\t {key}")
+                        print(f"  IP Address:\t\t {address.address}")
+                    if address.family == socket.AF_LINK:
+                        print(f"  MAC Address:\t\t {address.address}")
+                        print()
+                        keyCheck = True    
+                        if keyCheck == False:
+                            print("No Interface Found")
 
-    if keyCheck == False:
-        print("No Interface Found")
 
 #Get the OS name, version, computer name, and interface information 
 def get_comp_info():
@@ -74,4 +94,4 @@ def get_comp_info():
 if __name__ == "__main__":
     specs = get_comp_info()
     Display_info(specs)
-    Connectivity_test(specs, "9.1.2.3", "w3.ibm.com", "ibm.com")
+    Connectivity_test(specs, "8.8.8.8", "w3.ibm.com", "www.ibm.com")
